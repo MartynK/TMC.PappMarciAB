@@ -1,0 +1,243 @@
+---
+title: "child2"
+format: docx
+editor: visual
+---
+
+# Executive summary
+
+While with certain parameterizations, a sample size may be calculated, but the results are **very sensitive** to the assumptions made.
+
+Since data is available from the previous observational study (n\~200), it is *essential* to **review this data** to estimate the parameters of the study. The literature references do not provide information specific enough for our purposes, as in to accurately estimate the parameters of the study.
+
+The review is necessary also to ensure that the test has the desired properties, as in high NPV and a negative rate not (much) greater than the expected ratio of real negative cases.
+
+Thought may be given to **enriching the study population** by focusing on the subgroup most relevant to the research question, which in this case would be the patients with negative test results. This *may* allow for a more efficient use of resources if the gold standard evaluation of a case is more resource intensive relative to the enrollment of a patient.
+
+A natural modification of the study design would be to use a **paired design**, as in, to enroll patients into one cohort only, and then evaluate their results per both methodologies (ABSOLUTE and KINETICS) but treating them as per the KINETICS results only. **If** the chart review section is unaffected by the methodology used to decide on the treatment, this setup would allow for a more direct comparison of the two methodologies while reducing the number of patients needed to enroll approximately by half. (Credit to *Tamás Kói* for the idea.)
+
+![Schematic representation for a paired design](images/PappMarci.drawio.png){fig-align="center"}
+
+As **next steps** we should discuss reviewing the raw data from the observational study and these ideas regarding the study design.
+
+# Assumptions for sample size calculation
+
+The following initial assumptions were made:
+
+-   Dropout rate: 10%
+-   Significance level (two-tailed): 5%
+-   Arm A (KINETICS) NPV: 85%
+-   Arm B (KINETICS) NPV: 40%
+-   Proportion of negative tests on arm A (KINETICS): 25%
+-   Proportion of negative tests on arm B (ABSOLUTE): 50%
+-   True proportion of negatives in the population: 25%
+
+
+## NPV value of the ABSOLUTE arm
+
+The below graph shows the power of the study (y axis) as a function of the **total** number of subjects enrolled in the study (x axis).
+
+The color of the line represents the NPV of arm B (ABSOLUTE).
+
+The figure shows the impact of the NPV value of arm B on the power of the study highlighting the possible impact of accurately identifying the parameters of the study.
+
+To note, all of these parameters could be estimated from the previous observational study's raw data.
+
+```{r}
+
+
+pr <- expand.grid(
+  n_total = seq(50, 150, length.out = 30),
+  prop_neg_a = 0.25,
+  npv_corr_a = seq(0.85, 0.95, length.out = 1),
+  prop_neg_b = 0.5,
+  npv_corr_b = seq(0.3, 0.5, length.out = 3),
+  frac_tst = c(1)  #c(.33,.5,1)
+) %>%
+  mutate(
+         n_total_corr = get_total_n(n_total, frac_tst, tp_a = NA, fp_a = NA,
+                                    prop_neg_a = prop_neg_a),
+         n_total_eval = get_total_n(n_total, frac_tst, tp_a = NA, fp_a = NA,
+                                    prop_neg_a = prop_neg_a, evaled = TRUE),
+         max_npv = Calculate_missing_value(prop_neg = prop_neg_a),
+         max_prn = Calculate_missing_value(NPV = npv_corr_a)
+         ) %>%
+  filter( npv_corr_a <= max_npv,
+          prop_neg_a <= max_prn)
+
+pr$pr <- predict(mod, type = "response", newdata = pr)
+
+pr %>%
+  ggplot(aes(x = n_total_corr, y = pr
+             ,color = npv_corr_b
+             ,group = npv_corr_b
+             #,size = npv_a
+             #,alpha = npv_b
+  )) +
+  #geom_point() +
+  #geom_point(aes(y=prop_success),shape=3,size=2.5,data = dat_res_all) +
+  geom_line() +
+  theme_minimal() +
+  geom_hline(yintercept = .8, color = "salmon4", linetype = "dashed" ) +
+  geom_hline(yintercept = .9, color = "salmon4", linetype = "dashed" ) +
+  scale_y_continuous(limits = c(0.7,1)) +
+  scale_x_continuous(limits = c(50,300)) +
+  facet_grid(rows = vars(frac_tst),
+             labeller = labeller(frac_tst = c(`0.5` = "Test Fraction: 0.5",
+                                                `1` = "Test Fraction: 1"))) +
+  labs( y = "Power",
+        x = "Total sample size (enrolled subjects)",
+        color = "Arm B NPV")
+
+
+
+```
+
+## Enrichment
+
+An **enrichment design** in your context involves strategically focusing your study resources on the subgroup most relevant to your research question—the patients with negative test results, which are expected to be about 20% of your cohort. Since you're interested in evaluating the **negative predictive value (NPV)** of the test, you'd include **all patients with negative test results** in your analysis to maximize data on this critical group. For the more prevalent positive test results (approximately 80% of cases), you might choose to evaluate only **50% of these patients**. By doing so, you enrich your study population with a higher proportion of negative cases, enhancing the efficiency and statistical power related to the NPV. This selective evaluation allows you to allocate resources more effectively, concentrating on the less common but most informative negative outcomes while still maintaining adequate data on positive cases to assess the overall test performance.
+
+If the most labor-intensive part of the study is the evaluation of the treatment's appropriateness, it may be more efficient to evaluate only a subset of the patients with positive test results.
+
+The below graphs show that if the sample size is established as the number of patients who are *evaluated* rather than enrolled and the study population is enriched, then the study's power would be greater (n=200 is highlighted for ease of comparison). This method is not usable if a paired design is used.
+
+ \
+
+```{r}
+
+
+pr <- expand.grid(
+  n_total = seq(50, 150, length.out = 30),
+  prop_neg_a = 0.25,
+  npv_corr_a = seq(0.85, 0.95, length.out = 1),
+  prop_neg_b = 0.5,
+  npv_corr_b = seq(0.3, 0.5, length.out = 3),
+  frac_tst = c(.5,1)  #c(.33,.5,1)
+) %>%
+  mutate(
+         n_total_corr = get_total_n(n_total, frac_tst, tp_a = NA, fp_a = NA,
+                                    prop_neg_a = prop_neg_a),
+         n_total_eval = get_total_n(n_total, frac_tst, tp_a = NA, fp_a = NA,
+                                    prop_neg_a = prop_neg_a, evaled = TRUE),
+         max_npv = Calculate_missing_value(prop_neg = prop_neg_a),
+         max_prn = Calculate_missing_value(NPV = npv_corr_a)
+         ) %>%
+  filter( npv_corr_a <= max_npv,
+          prop_neg_a <= max_prn)
+
+pr$pr <- predict(mod, type = "response", newdata = pr)
+
+
+fig_2a <-
+  pr %>%
+    ggplot(aes(x = n_total_corr, y = pr
+               ,color = npv_corr_b
+               ,group = npv_corr_b
+               #,size = npv_a
+               #,alpha = npv_b
+    )) +
+    #geom_point() +
+    #geom_point(aes(y=prop_success),shape=3,size=2.5,data = dat_res_all) +
+    geom_line() +
+    theme_minimal() +
+    geom_hline(yintercept = .8, color = "salmon4", linetype = "dashed" ) +
+    geom_hline(yintercept = .9, color = "salmon4", linetype = "dashed" ) +
+    geom_vline(xintercept = 200, color = "salmon4", linetype = "dashed" ) +
+    scale_y_continuous(limits = c(0.7,1)) +
+    scale_x_continuous(limits = c(50,300)) +
+    facet_grid(rows = vars(frac_tst),
+               labeller = labeller(frac_tst = c(`0.5` = "Eval pos. Fraction: 0.5",
+                                                  `1` = "Eval pos. Fraction: 1"))) +
+    labs( y = "Power",
+          x = "Total sample size (enrolled subjects)",
+          color = "Arm B NPV")
+
+fig_2b <-
+  pr %>%
+    ggplot(aes(x = n_total_eval, y = pr
+               ,color = npv_corr_b
+               ,group = npv_corr_b
+               #,size = npv_a
+               #,alpha = npv_b
+    )) +
+    #geom_point() +
+    #geom_point(aes(y=prop_success),shape=3,size=2.5,data = dat_res_all) +
+    geom_line() +
+    theme_minimal() +
+    geom_hline(yintercept = .8, color = "salmon4", linetype = "dashed" ) +
+    geom_hline(yintercept = .9, color = "salmon4", linetype = "dashed" ) +
+    geom_vline(xintercept = 200, color = "salmon4", linetype = "dashed" ) +
+    scale_y_continuous(limits = c(0.7,1)) +
+    scale_x_continuous(limits = c(50,300)) +
+    facet_grid(rows = vars(frac_tst),
+               labeller = labeller(frac_tst = c(`0.5` = "Eval pos. Fraction: 0.5",
+                                                  `1` = "Eval pos. Fraction: 1"))) +
+    labs( y = "Power",
+          x = "Total sample size (evaluated subjects)",
+          color = "Arm B NPV")
+
+
+ggpubr::ggarrange(fig_2a, fig_2b, ncol = 2)
+
+```
+
+## Proportion of negative tests on the KINETIC arm
+
+The below graph shows the power of the study (y axis) as a function of the **total** number of subjects enrolled in the study (x axis). 
+
+The different colors represent a different proportion of negative tests on arm A (KINETICS).
+
+To note, there are theoretical upper limits on this variable if the NPV is to be kept at a constant level (here: 85% as discussed in the assumptions section).
+
+```{r}
+
+
+pr <- expand.grid(
+  n_total = seq(50, 150, length.out = 30),
+  prop_neg_a = seq(0.10,0.35, length.out = 6),
+  npv_corr_a = seq(0.85, 0.95, length.out = 1),
+  prop_neg_b = 0.5,
+  npv_corr_b = seq(0.4, 0.5, length.out = 1),
+  frac_tst = c(1)  #c(.33,.5,1)
+) %>%
+  mutate(
+         n_total_corr = get_total_n(n_total, frac_tst, tp_a = NA, fp_a = NA,
+                                    prop_neg_a = prop_neg_a),
+         n_total_eval = get_total_n(n_total, frac_tst, tp_a = NA, fp_a = NA,
+                                    prop_neg_a = prop_neg_a, evaled = TRUE),
+         max_npv = Calculate_missing_value(prop_neg = prop_neg_a),
+         max_prn = Calculate_missing_value(NPV = npv_corr_a)
+         ) %>%
+  filter( npv_corr_a <= max_npv,
+          prop_neg_a <= max_prn)
+
+pr$pr <- predict(mod, type = "response", newdata = pr)
+
+
+fig_3 <-
+  pr %>%
+    ggplot(aes(x = n_total_corr, y = pr
+               ,color = prop_neg_a
+               ,group = prop_neg_a
+               #,size = npv_a
+               #,alpha = npv_b
+    )) +
+    #geom_point() +
+    #geom_point(aes(y=prop_success),shape=3,size=2.5,data = dat_res_all) +
+    geom_line() +
+    theme_minimal() +
+    geom_hline(yintercept = .8, color = "salmon4", linetype = "dashed" ) +
+    geom_hline(yintercept = .9, color = "salmon4", linetype = "dashed" ) +
+    #geom_vline(xintercept = 200, color = "salmon4", linetype = "dashed" ) +
+    scale_y_continuous(limits = c(0.7,1)) +
+    scale_x_continuous(limits = c(50,300)) +
+    facet_grid(rows = vars(frac_tst),
+               labeller = labeller(frac_tst = c(`0.5` = "Eval pos. Fraction: 0.5",
+                                                  `1` = "Eval pos. Fraction: 1"))) +
+    labs( y = "Power",
+          x = "Total sample size (enrolled subjects)",
+          color = "Prop. negatives, arm A"
+          )
+
+fig_3
+```
