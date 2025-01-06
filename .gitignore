@@ -52,3 +52,5 @@ rsconnect/
 .Rproj.user
 data/mod.rds
 inst/report/end_state.rdata
+inst/report_2024.12.11/end_state.rdata
+inst/report_2024.12/end_state.rdata

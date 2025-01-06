@@ -1,6 +1,5 @@
 # Data wrangling
-# Based on our meeting @2024.12.06 wrong sheetws were used to exctract data from,
-# despite our correspondence at 2024.12.02.
+# Based on our meeting @2024.12.06 wrong sheetws were used to exctract data, despite our correspondence at 2024.12.02.
 
 fil <- here::here("inst","extdata","2024.11.25_prev_data",
                   "PCT teljes adatbázis_anonim.xlsx")
@@ -22,7 +21,7 @@ labs <-
   `names<-`(descriptor$name_new)
 
 sheets <- readxl::excel_sheets(fil) %>%
-  .[3:4] # !!!!!!!!!!!!!!!!!!!! HARD CODED INTERESTING SHEETS
+  .[3:6] # !!!!!!!!!!!!!!!!!!!! HARD CODED INTERESTING SHEETS
 
 for (dataset in sheets) {
 
@@ -62,15 +61,6 @@ for (dataset in sheets) {
 
 dat_full <- bind_rows(data) %>%
   filter(is.na(rowno) == FALSE)
-
-
-# gluing together the t-neg PCT data extracted by wrangling_dec.r (DO NOT RUN)
-load(here::here("data", "pct_tn1.rds" ))
-dat_full$pct_tn1 <- c( pct_tn1, rep(NA,nrow(dat_full)-length(pct_tn1)))
-
-dat_full <- dat_full %>%
-  arrange(id %>% as.character %>% as.numeric) %>% # due to id being a factor
-  mutate( pct_tn1 = c( pct_tn1, rep(NA,n()-length(pct_tn1))))
 
 
 save(dat_full, file = here::here("data","dat_full.rds"))

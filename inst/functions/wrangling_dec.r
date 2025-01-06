@@ -1,13 +1,11 @@
 # Data wrangling
-# Based on our meeting @2024.12.06 wrong sheetws were used to exctract data from,
-# despite our correspondence at 2024.12.02.
 
-fil <- here::here("inst","extdata","2024.11.25_prev_data",
-                  "PCT teljes adatbázis_anonim.xlsx")
+fil <- here::here("inst","extdata","2024.12.07_prev_data2",
+                  "PCT t-1 t0 teljes adatbázis_MZs.xls")
 
 
 descriptor <-
-  here::here("inst","extdata","2024.11.25_prev_data","description.xlsx") %>%
+  here::here("inst","extdata","2024.12.07_prev_data2","description.xlsx") %>%
   file.path() %>%
   readxl::read_excel(skip = 0)
 
@@ -22,12 +20,12 @@ labs <-
   `names<-`(descriptor$name_new)
 
 sheets <- readxl::excel_sheets(fil) %>%
-  .[3:4] # !!!!!!!!!!!!!!!!!!!! HARD CODED INTERESTING SHEETS
+  .[1] # !!!!!!!!!!!!!!!!!!!! HARD CODED INTERESTING SHEETS
 
 for (dataset in sheets) {
 
   datachunk <- fil |>
-    readxl::read_xlsx(sheet = dataset
+    readxl::read_xls(sheet = dataset
                       ,skip = 0 # !!!!!!!!!!!!!!!!!! HARD CODED
                       ) |> # or read_xls() as appropriate
     # handle duplicate colnames
@@ -60,18 +58,37 @@ for (dataset in sheets) {
   }
 }
 
-dat_full <- bind_rows(data) %>%
-  filter(is.na(rowno) == FALSE)
+dat_full_new <- bind_rows(data) %>%
+  filter(is.na(id) == FALSE)
 
 
-# gluing together the t-neg PCT data extracted by wrangling_dec.r (DO NOT RUN)
-load(here::here("data", "pct_tn1.rds" ))
-dat_full$pct_tn1 <- c( pct_tn1, rep(NA,nrow(dat_full)-length(pct_tn1)))
 
-dat_full <- dat_full %>%
-  arrange(id %>% as.character %>% as.numeric) %>% # due to id being a factor
-  mutate( pct_tn1 = c( pct_tn1, rep(NA,n()-length(pct_tn1))))
+exp_join <- left_join(
+  dat_full %>%
+    mutate(dept = as.character(dept),
+           sex = as.character(sex)
+           ),
+  dat_full_new %>% select(
+    "dept","sex","admission","enrollment","age","saps","pm_perc",
+    "pct_t0"),
+  by = c(
+    #"dept","sex",
+    "admission"
+    ,"enrollment"
+    ,"age"
+    ,"saps"
+    #,"pm_perc"
+    ),
+  keep = FALSE
+)
 
+plot(exp_join$pct_t0.x,exp_join$pct_t0.y)
+table(exp_join$pct_t0.x - exp_join$pct_t0.y == 0)
 
-save(dat_full, file = here::here("data","dat_full.rds"))
+# I'll SUPPOSE the t_neg1 PCT values are for pat.1-120 which are the same for
+# which are in the last database.
+# Only this way is the problem solvable
+pct_tn1 <- dat_full$pct_tn1 %>% as.character() %>% as.numeric()
+
+save(pct_tn1, file = here::here("data","pct_tn1.rds"))
 

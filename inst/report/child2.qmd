@@ -32,7 +32,6 @@ The following initial assumptions were made:
 -   Proportion of negative tests on arm B (ABSOLUTE): 50%
 -   True proportion of negatives in the population: 25%
 
-
 ## NPV value of the ABSOLUTE arm
 
 The below graph shows the power of the study (y axis) as a function of the **total** number of subjects enrolled in the study (x axis).
@@ -183,7 +182,7 @@ ggpubr::ggarrange(fig_2a, fig_2b, ncol = 2)
 
 ## Proportion of negative tests on the KINETIC arm
 
-The below graph shows the power of the study (y axis) as a function of the **total** number of subjects enrolled in the study (x axis). 
+The below graph shows the power of the study (y axis) as a function of the **total** number of subjects enrolled in the study (x axis).
 
 The different colors represent a different proportion of negative tests on arm A (KINETICS).
 
