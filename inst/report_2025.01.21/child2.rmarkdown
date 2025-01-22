@@ -1,0 +1,54 @@
+---
+title: "child2"
+format: docx
+editor: visual
+---
+
+
+# *Summary & assumptions*
+
+For the planned study, a total of **250** patients with a possible infection must be observed given the below assumptions.
+
+For the proposed randomized clinical study, the sample size considerations are given with the following suppositions:
+
+ - 2 arms (arm A, B)
+ - binary outcome variable (ie. rates between groups)
+ - aim: to show statistical significant difference between the two arms
+ - arm A is hypothecized to be 30%
+ - arm B is hypothecized to be 15%
+ - Power of 80%
+ - Type I error rate of 5% (2-sided, equal to 2.5% one-sided)
+ - 1 interim analysis (at 50% of cases, but this is flexible), 1 final analysis
+ - Hwang, Shi & DeCani alpha spending function, gamma = -2
+ - 1:1 randomization
+
+
+```{r working_environment, include=TRUE}
+# Load the package `ggplot2`
+library(ggplot2)
+# Load the package `rpact`
+library(rpact)
+```
+
+
+
+## R outputs
+
+
+```{r create_design, include=TRUE, results='hide'}
+design <- getDesignGroupSequential(typeOfDesign = "asHSD", informationRates = c(0.5, 1),
+  gammaA = -2)
+print(design)
+getDesignCharacteristics(design)
+designPlan <- getSampleSizeRates(design, pi1 = 0.3, pi2 = 0.15)
+summary(designPlan)
+print(designPlan)
+```
+
+```{r design_output, include=TRUE, echo=FALSE, results='asis'}
+print(design, markdown = TRUE)
+print(getDesignCharacteristics(design), markdown = TRUE)
+print(summary(designPlan), markdown = TRUE)
+print(designPlan, markdown = TRUE)
+```
+

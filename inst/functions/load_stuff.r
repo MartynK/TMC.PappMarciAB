@@ -1,10 +1,10 @@
 library(dplyr)
-#library(gtsummary)
 library(ggplot2)
-#library(kableExtra)
-#library(lubridate)
-library(splines)
 
+library(pROC)
+library(randomForest)
+library(caret)
+library(rpart)
 
 knitr::opts_chunk$set(
   # A nyers szöveg kimenetel elé ne tegyen '##'-t

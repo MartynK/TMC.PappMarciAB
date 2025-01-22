@@ -7,6 +7,7 @@ library(caret)
 source(here::here("inst","functions","load_stuff.r"))
 #load(here::here("data","dat_full.rds"))
 
+# Direct load of the excel compiled by me
 dat_full <- readxl::read_xlsx(here::here("inst","extdata",
                                          "2024.12.21","t1t0.xlsx")) %>%
   rename( t_min_1 = `T-1`,
@@ -16,12 +17,14 @@ dat_full <- readxl::read_xlsx(here::here("inst","extdata",
           )
 
 
-# The pct_tn1 values are distinct from t0
-with(dat_full, table( inf, diff == 0))
+# # The pct_tn1 values are distinct from t0 in all but 1 case
+# with(dat_full, table( inf, diff == 0))
 
 
 fig_1 <-
   dat_full %>%
+  # recode inf if 1: infection if 0:no infection
+  mutate( inf = ifelse(inf ==1 , "infection", "no infection")) %>%
     ggplot(.,aes(x = diff, group = inf)) +
     # histogram with density
     geom_histogram(aes(y = ..density..), bins = 30, fill = "lightgrey", color = "black") +
@@ -29,10 +32,14 @@ fig_1 <-
     geom_density(alpha = 0.5, fill = "blue") +
     theme_minimal() +
     facet_wrap(~inf) +
-    scale_x_log10()
+    scale_x_log10() +
+    labs(x = "Difference between T0 and T-1",
+         y = "Density (for histogram)")
 
 fig_2 <-
   dat_full %>%
+  # recode inf if 1: infection if 0:no infection
+  mutate( inf = ifelse(inf ==1 , "infection", "no infection")) %>%
   ggplot(.,aes(x = ratio_over_diff, group = inf)) +
   # histogram with density
   geom_histogram(aes(y = ..density..), bins = 30, fill = "lightgrey", color = "black") +
@@ -40,7 +47,9 @@ fig_2 <-
   geom_density(alpha = 0.5, fill = "blue") +
   theme_minimal() +
   facet_wrap(~inf) +
-  scale_x_log10()
+  scale_x_log10() +
+  labs(x = "(T0 / T-1)/(T-1 - T0)",
+       y = "Density (for histogram)")
 
 
 # Calculate a bunch of new variables
@@ -54,10 +63,15 @@ dat_full <- dat_full %>%
 roc_curve <- roc(inf ~ val, data = dat_full, direction = ">", levels = c(0, 1))
 
 # ROC görbe rajzolása
-plot(roc_curve, main = "ROC Curve", col = "blue", lwd = 2)
+## FIG 3 !!!
+#plot(roc_curve, main = "ROC Curve", col = "blue", lwd = 2)
 # Add confidence intervals as a shaded area
 ci <- ci.se(roc_curve, specificities = seq(0, 1, by = 0.01))  # Specificity range
-plot(ci, type = "shape", col = rgb(0.2, 0.5, 0.8, 0.3))  # Add shaded confidence interval
+# plot(ci, type = "shape", col = rgb(0.2, 0.5, 0.8, 0.3))  # Add shaded confidence interval
+
+# # Print AUC
+# print(auc(roc_curve))
+# (cutoff)
 
 # Define a cutoff percentile for the simple ROC analysis (reproducing orig. findings)
 CUTOFF_PERC <- 0.1
@@ -66,37 +80,13 @@ cutoff <- quantile(dat_full$val, CUTOFF_PERC, na.rm = TRUE)
 dat_full <- dat_full %>%
   mutate(pred = ifelse(val > cutoff,1,0))
 
-
-# Print AUC
-print(auc(roc_curve))
-(cutoff)
-
 # Print confusion table (NPV=0.38)
-confusionMatrix(
-  factor(dat_full$pred),
-  factor(dat_full$inf),
-  positive = "1")
+tab_1 <-
+  confusionMatrix(
+    factor(dat_full$pred),
+    factor(dat_full$inf),
+    positive = "1")
 
-
-
-# Reproduce the "ABSOLUTE" plans
-dat_full$pr_simp <- ifelse(dat_full$t0 >0.5,1,0) %>% factor
-# Print confusion table (NPV=0.20)
-confusionMatrix(dat_full$pr_simp,
-                factor(dat_full$inf),
-                positive = "0")
-
-
-# # Check for disjointedness in the db
-# # This is == 0, we are good, each sub is associated with only one row
-# is_distjunct <-
-#   dat_full %>%
-#   filter(is.na(inf) == FALSE) %>%
-#   select(inf,id) %>%
-#   # check whether an ID is associated with only one row
-#   count(id) %>%
-#   filter(n > 1) %>%
-#   nrow()
 
 
 ## Fit a decision tree model without any major optimizations

@@ -1,0 +1,56 @@
+---
+title: "Sample Size considerations for the KIPRUN study"
+author: "Márton Kiss, MD"
+date: "`r Sys.Date()`"
+format:
+  docx:
+    fig-width: 6
+    fig-height: 4
+    reference-doc: custom_ref_doc.docx
+  html: default
+editor: visual
+prefer-html: true
+toc: true
+toc-depth: 2
+execute:
+  echo: false
+  warning: false
+---
+
+```{r setup}
+
+source( here::here( "inst", "functions", "load_stuff.r"))
+#load( here::here("data","end_state_iter14_forreport.rdata"))
+
+
+# source_all_files(here::here("inst","example_quarto","backend")) # Run slow stuff; 
+##recommend running separately
+
+#load_all_Rdata(directory=here::here("inst","report","backend")) # Load slow suff's output
+
+```
+
+```{r, child = here::here("inst", "report_2025.01.21", "child1_preamble.qmd")}
+```
+
+\newpage
+
+```{r, child = here::here("inst", "report_2025.01.21", "child2.qmd")}
+```
+
+\newpage
+
+# Remarks
+
+### Information regarding the document's compilation
+
+```{r, comment='', results='asis'}
+sessionInfo() %>% report::report() %>% cat()
+```
+
+### Time of compilation
+
+```{r last_chunk, results='asis'}
+Sys.time() %>% as.character %>% cat
+save.image(file = here::here("inst","report","end_state_2021.01.21.rdata"))
+```

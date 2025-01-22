@@ -1,0 +1,82 @@
+---
+title: "child2"
+format: docx
+editor: visual
+---
+
+# *Executive summary*
+
+It is with clarity — and a measure of regret — that we must conclude that the proposed clinical trial evaluating the utility PCT (Procalcitonin) change monitoring should not proceed. The preliminary data at our disposal, which includes both a conventional Area Under the Curve (AUC) analysis for the change and a random forest–based approach, offers no credible evidence that comparing a new PCT test to the last known one could reliably guide clinical decision-making or reduce inappropriate therapy. 
+
+The fundamental premise—that measurements taken well in advance of an actual infection event would inform clinical suspicion—appears unsound in light of the data. Indeed, these results are akin to attempting to predict influenza infection from body temperature changes hours before the virus could plausibly manifest a fever. Previous attempts hinted that a reliable classification system would need data from 16-24 hours **after** the suspicion of infection arose.
+
+Despite the theoretical promise of PCT change as a biomarker, the data were lacking a predictive signal which would justify further investment of time or resources. The random forest model, which typically excels at extracting subtle patterns, also failed to produce an acceptable method for forgoing therapy in case of a suspicion. On the whole, the lack of a signal in the preliminary shared data does not justify a repeat clinical trial.
+
+
+
+## Variables of interest
+
+The distribution of the changes between the last known (T-1) PCT value and the current (T0) PCT value is shown in Figure 1. 
+
+In an attempt to provide a better contrast between subjects with a marked change and the ones who had less marked changes, the rate of change over the absolute difference (CONTR variable) is also reported.
+
+```{r uc1, fig.cap="Figure 1"}
+fig_1
+```
+
+```{r, fig.cap="Figure 2"}
+fig_2
+```
+
+## AUC investigation
+
+The ROC curve in Figure 3 shows the performance of the CONTR variable in predicting the infection status. The area under the curve (AUC) is `r round(auc_roc_curve,digits=4)` which is less than optimal. The AUC curve shows that the variable is practically useless in predicting negative infection status with confidence.
+
+Fixing the cutoff value as `r round(cutoff,digits=4)` or at the 10th percentile (making only 10 percent of the sample to be prediced 'negative') the 'negative' cases had a 50% NPV, meaning that in 50% of cases which were predicted negative (predicted '0' as per the coding used), there was an infection. Given the seriousness of the condition, this does not seem to be an acceptable rate of false negatives.
+
+```{r, fig.cap="Figure 3"}
+
+# ROC görbe rajzolása
+## FIG 3 !!!
+plot(roc_curve, main = "ROC Curve", col = "blue", lwd = 2)
+plot(ci, type = "shape", col = rgb(0.2, 0.5, 0.8, 0.3))
+
+```
+
+
+```{r, warning=FALSE}
+
+tab_1
+
+```
+
+## Random Forest
+
+A Random forest approach was used in order to make sure that the maximum amount of information was utilized in the classification. 
+
+A 10-fold crossvalidation setup was used to ensure that the model was not overfitting the data and to better investigate the generalizability of the results. 
+
+The model was optimized on the number of predictors available per tree. 2000 trees per forest were used to ensure the stability of the results.
+
+The optimized NPV for the holdout sets was only 30%, meaning that if the model signalled a negative result, there was a 70% chance that the patient was actually infected (!)   
+
+This is not an acceptable rate of false negatives for this condition. As this approach ensured the best possible classification mirroring the intended use, it can be stated that the T-1 vs. T0 PCT values could **not** be reliably used to predict the lack of infection if the suspicion for an infection is present as determined by the attending physician.
+
+```{r, fig.cap="Figure 4 - NPV optimization in the Random Forest model" }
+
+# print(rf_model)
+plot(rf_model)
+
+
+```
+
+
+```{r, fig.cap="Figure 5 - Variable Importance plot"}
+
+#print(varImp_rf)
+plot(varImp_rf)
+
+#print(conf_matrix) # NOT THE HOLDOUT SETS
+
+```
+
